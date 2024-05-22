@@ -14,3 +14,11 @@ export interface SuccessResponse {
     message: string
     data: object | any,
 }
+
+export const generateRandomToken = () => {
+    const min = 100000;
+    const max = 999999;
+    const randomDecimal = Math.random();
+    const randomScaled = Math.floor(randomDecimal * (max - min + 1)) + min;
+    return randomScaled;
+}

@@ -1,13 +1,15 @@
 import { Body, Controller, Get, Post, ValidationPipe } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, TokenType } from '@prisma/client';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from 'src/user/dto/create-user.dts';
-import { excludeFromObject } from 'src/utilities';
+import { excludeFromObject, generateRandomToken } from 'src/utilities';
 import { UserLoginDto } from 'src/user/dto/user-login.dto';
+import { DatabaseService } from 'src/database/database.service';
+import { log } from 'console';
 
 @Controller('auth')
 export class AuthController {
-    constructor(private readonly authService: AuthService) { }
+    constructor(private readonly authService: AuthService, private databaseService: DatabaseService) { }
 
     @Post('/login')
     async login(@Body(ValidationPipe) signInDto: UserLoginDto) {
@@ -32,14 +34,27 @@ export class AuthController {
             message: "User created successfully",
             data: excludeFromObject(user, ['password'])
         }
-
     }
 
-    @Post()
-    requestEmailVerification() { }
+    @Post('/send-email-verification')
+    sendEmailVerification(@Body() email: { email: string }) {
+        this.authService.sendEmailVerification(email.email)
+        return {
+            status: "success",
+            code: 200,
+            message: "A mail has been sent to your email.",
+        }
+    }
 
-    @Post()
-    verifyEmailAccount() { }
+    @Post('/verify-email')
+    verifyEmailAccount(@Body() token: { token: string }) {
+        this.authService.verifyEmailAccount(+token.token)
+        return {
+            status: "success",
+            code: 200,
+            message: "Email verified successfully",
+        }
+    }
 
     @Post()
     requestPasswordReset() { }

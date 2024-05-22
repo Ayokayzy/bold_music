@@ -1,15 +1,18 @@
-import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, NotAcceptableException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Prisma } from '@prisma/client';
+import { Prisma, TokenType } from '@prisma/client';
 import * as bcrypt from 'bcrypt'
 import { DatabaseService } from 'src/database/database.service';
 import { JwtService } from '@nestjs/jwt';
 import { v4 as uuidv4 } from 'uuid';
-import { excludeFromObject } from 'src/utilities';
+import { excludeFromObject, generateRandomToken } from 'src/utilities';
+import { CreateUserDto } from 'src/user/dto/create-user.dts';
+import moment from 'moment';
+import { EmailService } from 'src/email/email.service';
 
 @Injectable()
 export class AuthService {
-    constructor(private readonly databaseService: DatabaseService, private jwtService: JwtService, private env: ConfigService) { }
+    constructor(private readonly databaseService: DatabaseService, private jwtService: JwtService, private env: ConfigService, private emailService: EmailService) { }
 
     async validateUser(username: string, pass: string): Promise<any> {
         const user = await this.databaseService.user.findUnique({
@@ -24,7 +27,7 @@ export class AuthService {
         // return null;
     }
 
-    async registerUser(createUserDto: Prisma.UserCreateInput) {
+    async registerUser(createUserDto: CreateUserDto) {
         try {
             const exists = await this.databaseService.user.findUnique({
                 where: { email: createUserDto.email }
@@ -55,5 +58,68 @@ export class AuthService {
             user: excludeFromObject(user, ['password']),
             token: await this.jwtService.signAsync(payload)
         }
+    }
+
+    async sendEmailVerification(email: string) {
+        // find user with email
+        try {
+            const user = await this.databaseService.user.findUnique({
+                where: { email, }
+            })
+            if (!user) throw new UnauthorizedException("This email does not belong to any user")
+            // find and delete duplicate token
+            await this.databaseService.token.deleteMany({
+                where: {
+                    AND: [
+                        { userId: user.id },
+                        { type: TokenType.VerifyEmail }
+                    ]
+                }
+            })
+            const token = generateRandomToken()
+            const now = moment()
+            await this.databaseService.token.create({
+                data: {
+                    id: uuidv4(),
+                    token,
+                    type: TokenType.VerifyEmail,
+                    expired: false,
+                    expireAt: now.add(5, 'minutes').format(),
+                    userId: user.id
+                }
+            })
+            this.emailService.sendEmailVerification(email, token)
+        } catch (error) {
+            console.log({ error });
+            throw new InternalServerErrorException(error)
+        }
+        return
+    }
+
+    async verifyEmailAccount(token: number) {
+        const foundToken = await this.databaseService.token.findFirst({
+            where: {
+                token: token
+            }
+        })
+        if (!foundToken) throw new NotAcceptableException("Invalid Token")
+        const now = moment()
+        if (moment(foundToken.expireAt) > moment(foundToken.createdAt).add(5, 'minute')) {
+            throw new BadRequestException("Token has expired")
+        }
+        const user = await this.databaseService.user.update({
+            where: {
+                id: foundToken.userId
+            },
+            data: {
+                emailVerified: true
+            }
+        })
+        await this.databaseService.token.delete({
+            where: {
+                id: foundToken.id
+            }
+        })
+        return
     }
 }

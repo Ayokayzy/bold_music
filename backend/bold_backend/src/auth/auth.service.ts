@@ -52,6 +52,7 @@ export class AuthService {
         if (!user) throw new UnauthorizedException("Incorrect email.")
         const result = await bcrypt.compare(password, user.password)
         if (!result) throw new UnauthorizedException("Incorrect password.")
+        if (!user.emailVerified) throw new UnauthorizedException("email not verified")
         const payload = excludeFromObject(user, ['password', 'createdAt', 'updatedAt', 'firstName', 'lastName'])
 
         return {
@@ -84,11 +85,11 @@ export class AuthService {
                     token,
                     type: TokenType.VerifyEmail,
                     expired: false,
-                    expireAt: now.add(5, 'minutes').format(),
+                    expireAt: now.add(15, 'minutes').format(),
                     userId: user.id
                 }
             })
-            this.emailService.sendEmailVerification(email, token)
+            this.emailService.sendEmailVerification(user, token)
         } catch (error) {
             console.log({ error });
             throw new InternalServerErrorException(error)
@@ -105,6 +106,11 @@ export class AuthService {
         if (!foundToken) throw new NotAcceptableException("Invalid Token")
         const now = moment()
         if (moment(foundToken.expireAt) > moment(foundToken.createdAt).add(5, 'minute')) {
+            await this.databaseService.token.delete({
+                where: {
+                    id: foundToken.id
+                }
+            })
             throw new BadRequestException("Token has expired")
         }
         const user = await this.databaseService.user.update({
@@ -119,7 +125,71 @@ export class AuthService {
             where: {
                 id: foundToken.id
             }
+        });
+        return excludeFromObject(user, ["password"]);
+    }
+
+    async requestPasswordReset(email: string) {
+        try {
+            const user = await this.databaseService.user.findUnique({
+                where: { email, }
+            });
+            if (!user) throw new UnauthorizedException("This email does not belong to any user");
+            const token = generateRandomToken();
+            const now = moment();
+            await this.databaseService.token.create({
+                data: {
+                    id: uuidv4(),
+                    token,
+                    type: TokenType.ResetPassword,
+                    expired: false,
+                    expireAt: now.add(15, 'minutes').format(),
+                    userId: user.id,
+                }
+            })
+            this.emailService.sendEmailVerification(user, token);
+            return "success"
+        } catch (error) {
+            console.log({ error });
+            throw new InternalServerErrorException(error);
+        }
+    }
+
+    async verifyPasswordReset(token: number) {
+        const foundToken = await this.databaseService.token.findFirst({
+            where: {
+                token: token
+            }
+        })
+        if (!foundToken) throw new NotAcceptableException("Invalid Token")
+        const now = moment()
+        if (moment(foundToken.expireAt) > moment(foundToken.createdAt).add(15, 'minute')) {
+            await this.databaseService.token.delete({
+                where: {
+                    id: foundToken.id
+                }
+            })
+            throw new BadRequestException("Token has expired")
+        }
+        await this.databaseService.token.delete({
+            where: {
+                id: foundToken.id
+            }
         })
         return
+    }
+
+    async changePassword(id: string, oldPassword: string, newPassword: string) {
+        const user = await this.databaseService.user.findUnique({
+            where: { id, }
+        })
+        if (!user) throw new UnauthorizedException("Unauthorized user");
+        const result = await bcrypt.compare(oldPassword, user.password);
+        if (!result) throw new UnauthorizedException("Incorrect password.");
+        const hash = await bcrypt.hash(user.password, +this.env.get<number>("SALT_ROUNDS"))
+        await this.databaseService.user.update({
+            where: { id, },
+            data: { password: hash }
+        })
     }
 }

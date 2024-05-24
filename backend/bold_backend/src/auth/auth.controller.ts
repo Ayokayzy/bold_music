@@ -6,6 +6,8 @@ import { excludeFromObject, generateRandomToken } from 'src/utilities';
 import { UserLoginDto } from 'src/user/dto/user-login.dto';
 import { DatabaseService } from 'src/database/database.service';
 import { log } from 'console';
+import { EmailDto } from './dto/emailDto';
+import { ResetPasswordDto } from './dto/ResetPasswordDto';
 
 @Controller('auth')
 export class AuthController {
@@ -37,7 +39,7 @@ export class AuthController {
     }
 
     @Post('/send-email-verification')
-    sendEmailVerification(@Body() email: { email: string }) {
+    sendEmailVerification(@Body(ValidationPipe) email: EmailDto) {
         this.authService.sendEmailVerification(email.email)
         return {
             status: "success",
@@ -47,7 +49,7 @@ export class AuthController {
     }
 
     @Post('/verify-email')
-    verifyEmailAccount(@Body() token: { token: string }) {
+    verifyEmailAccount(@Body(ValidationPipe) token: { token: string }) {
         this.authService.verifyEmailAccount(+token.token)
         return {
             status: "success",
@@ -56,13 +58,34 @@ export class AuthController {
         }
     }
 
-    @Post()
-    requestPasswordReset() { }
+    @Post('/request-password-reset')
+    requestPasswordReset(@Body(ValidationPipe) email: EmailDto) {
+        this.authService.requestPasswordReset(email.email)
+        return {
+            status: "success",
+            code: 200,
+            message: "A mail has been sent to your email.",
+        }
+    }
 
-    @Post()
-    resetPassword() { }
+    @Post('/verify-password-reset-token')
+    resetPassword(@Body() token: { token: string }) {
+        this.authService.verifyPasswordReset(+token.token)
+        return {
+            status: "success",
+            code: 200,
+            message: "Token verified successfully",
+        }
+    }
 
-    @Post()
-    changePassword() { }
+    @Post('/change-password')
+    changePassword(@Body(ValidationPipe) changePasswordDto: ResetPasswordDto) {
+        this.authService.changePassword(changePasswordDto.id, changePasswordDto.oldPassword, changePasswordDto.newPassword)
+        return {
+            status: "success",
+            code: 200,
+            message: "Password reset successfully",
+        }
+    }
 
 }

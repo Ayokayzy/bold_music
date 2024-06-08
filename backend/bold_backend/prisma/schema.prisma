@@ -14,15 +14,16 @@ datasource db {
 }
 
 model User {
-  id            String   @id @unique @default(dbgenerated())
+  id            String     @id @unique @default(dbgenerated())
   firstName     String
   lastName      String
-  email         String   @unique
-  role          Role     @default(user)
+  email         String     @unique
+  role          Role       @default(user)
   token         Token?
-  emailVerified Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  playlists     Playlist[]
+  emailVerified Boolean    @default(false)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
   password      String
 }
 
@@ -37,6 +38,49 @@ model Token {
   expireAt  DateTime
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+}
+
+model Artist {
+  id        String   @id @unique @default(dbgenerated())
+  name      String   @unique
+  bio       String
+  songs     Song[]
+  albums    Album[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Song {
+  id         String   @id @unique @default(dbgenerated())
+  title      String
+  artist     Artist   @relation(fields: [artistId], references: [id])
+  artistId   String
+  genre      String
+  duration   Int
+  fileUrl    String
+  coverImage String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Playlist {
+  id        String   @id @unique @default(dbgenerated())
+  title     String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Album {
+  id          String   @id @unique @default(dbgenerated())
+  title       String
+  artist      Artist   @relation(fields: [artistId], references: [id])
+  artistId    String
+  releaseDate DateTime
+  coverPhoto  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 enum Role {

@@ -23,8 +23,7 @@ export class AuthService {
         if (!user) throw new BadRequestException("Incorrect email.")
         const result = await bcrypt.compare(pass, user.password)
         if (!result) throw new BadRequestException("Incorrect password.")
-        return user
-        // return null;
+        return excludeFromObject(user, ["password", "createdAt", "updatedAt"])
     }
 
     async registerUser(createUserDto: CreateUserDto) {
@@ -43,21 +42,21 @@ export class AuthService {
         }
     }
 
-    async login({ email, password }) {
-        const user = await this.databaseService.user.findUnique({
-            where: {
-                email: email
-            }
-        });
-        if (!user) throw new UnauthorizedException("Incorrect email.")
-        const result = await bcrypt.compare(password, user.password)
-        if (!result) throw new UnauthorizedException("Incorrect password.")
-        if (!user.emailVerified) throw new UnauthorizedException("email not verified")
-        const payload = excludeFromObject(user, ['password', 'createdAt', 'updatedAt', 'firstName', 'lastName'])
-
+    async login(user: any) {
+        // const user = await this.databaseService.user.findUnique({
+        //     where: {
+        //         email: email
+        //     }
+        // });
+        // if (!user) throw new UnauthorizedException("Incorrect email.")
+        // const result = await bcrypt.compare(password, user.password)
+        // if (!result) throw new UnauthorizedException("Incorrect password.")
+        // if (!user.emailVerified) throw new UnauthorizedException("email not verified")
+        const payload = { email: user.email, sub: user.id };
         return {
-            user: excludeFromObject(user, ['password']),
-            token: await this.jwtService.signAsync(payload)
+            // user: excludeFromObject(user, ['password']),
+            user: user,
+            token: this.jwtService.sign(payload)
         }
     }
 

@@ -13,19 +13,19 @@ import { ResetPasswordDto } from './dto/ResetPasswordDto';
 export class AuthController {
     constructor(private readonly authService: AuthService, private databaseService: DatabaseService) { }
 
-    @Post('/login')
-    async login(@Body(ValidationPipe) signInDto: UserLoginDto) {
-        const result = await this.authService.login(signInDto)
-        return {
-            status: "success",
-            code: 201,
-            message: "User logged successfully",
-            data: {
-                data: result.user,
-                token: result.token
-            }
-        }
-    }
+    // @Post('/login')
+    // async login(@Body(ValidationPipe) signInDto: UserLoginDto) {
+    //     const result = await this.authService.login(signInDto)
+    //     return {
+    //         status: "success",
+    //         code: 201,
+    //         message: "User logged successfully",
+    //         data: {
+    //             data: result.user,
+    //             token: result.token
+    //         }
+    //     }
+    // }
 
     @Post('/register')
     async register(@Body(ValidationPipe) createUserDto: CreateUserDto) {

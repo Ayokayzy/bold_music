@@ -9,24 +9,23 @@ export type User = any
 export class UserService {
     constructor(private databaseService: DatabaseService) { }
 
-    findAll(role: Role) {
+    async findAll(role?: Role) {
         if (role) {
-            return this.databaseService.user.findMany({
+            return await this.databaseService.user.findMany({
                 where: { role, },
             })
         }
-
         return this.databaseService.user.findMany({})
     }
 
-    findOne(id: string) {
-        return this.databaseService.user.findUnique({
+    async findOne(id: string) {
+        return await this.databaseService.user.findUnique({
             where: { id, },
         })
     }
 
-    update(id: string, updateUserDto: Prisma.UserUpdateInput) {
-        return this.databaseService.user.update({
+    async update(id: string, updateUserDto: Prisma.UserUpdateInput) {
+        return await this.databaseService.user.update({
             where: {
                 id,
             },
@@ -34,8 +33,8 @@ export class UserService {
         })
     }
 
-    delete(id: string) {
-        return this.databaseService.user.delete({
+    async delete(id: string) {
+        return await this.databaseService.user.delete({
             where: {
                 id,
             }

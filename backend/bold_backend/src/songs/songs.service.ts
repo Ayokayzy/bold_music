@@ -1,26 +1,47 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateSongDto } from './dto/create-song.dto';
 import { UpdateSongDto } from './dto/update-song.dto';
+import { DatabaseService } from 'src/database/database.service';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class SongsService {
-  create(createSongDto: CreateSongDto) {
-    return 'This action adds a new song';
+  constructor(private databaseService: DatabaseService) { }
+
+  async create(createSongDto: CreateSongDto) {
+    const song = await this.databaseService.song.create({
+      data: { ...createSongDto, id: uuidv4() }
+    })
+    return song;
   }
 
-  findAll() {
-    return `This action returns all songs`;
+  async findAll() {
+    const songs = await this.databaseService.song.findMany({})
+    return songs
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} song`;
+  async findOne(id: string) {
+    const song = await this.databaseService.song.findUnique({
+      where: { id }
+    })
+    if (!song) throw new NotFoundException("ID does not match any song");
+    return song
   }
 
-  update(id: number, updateSongDto: UpdateSongDto) {
-    return `This action updates a #${id} song`;
+  async update(id: string, updateSongDto: UpdateSongDto) {
+    await this.findOne(id)
+
+    const updatedSong = await this.databaseService.song.update({
+      where: { id, },
+      data: updateSongDto
+    });
+    return updatedSong
   }
 
-  remove(id: number) {
+  async remove(id: string) {
+    const song = await this.databaseService.song.delete({
+      where: { id, }
+    })
     return `This action removes a #${id} song`;
   }
 }

@@ -1,26 +1,46 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
+import { DatabaseService } from 'src/database/database.service';
 
 @Injectable()
 export class AlbumService {
-  create(createAlbumDto: CreateAlbumDto) {
-    return 'This action adds a new album';
+  constructor(private databaseService: DatabaseService) { }
+
+  async create(createAlbumDto: CreateAlbumDto) {
+    const album = await this.databaseService.album.create({
+      data: createAlbumDto
+    })
+    return album
   }
 
-  findAll() {
-    return `This action returns all album`;
+  async findAll() {
+    const albums = await this.databaseService.album.findMany({})
+    return albums
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} album`;
+  async findOne(id: string) {
+    const album = await this.databaseService.album.findUnique({
+      where: { id, }
+    })
+    if (!album) throw new NotFoundException("ID does not match any album");
+    return album
   }
 
-  update(id: number, updateAlbumDto: UpdateAlbumDto) {
-    return `This action updates a #${id} album`;
+  async update(id: string, updateAlbumDto: UpdateAlbumDto) {
+    await this.findOne(id)
+    const updatedAlbum = await this.databaseService.album.update({
+      where: { id, },
+      data: updateAlbumDto
+    })
+    return updatedAlbum;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} album`;
+  async remove(id: string) {
+    await this.findOne(id)
+    const deletedAlbum = await this.databaseService.album.delete({
+      where: { id, }
+    })
+    return null
   }
 }

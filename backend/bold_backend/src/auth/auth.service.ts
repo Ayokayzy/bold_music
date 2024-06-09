@@ -88,7 +88,7 @@ export class AuthService {
                     userId: user.id
                 }
             })
-            this.emailService.sendEmailVerification(user, token)
+            await this.emailService.sendEmailVerification(user, token)
         } catch (error) {
             console.log({ error });
             throw new InternalServerErrorException(error)
@@ -103,14 +103,14 @@ export class AuthService {
             }
         })
         if (!foundToken) throw new NotAcceptableException("Invalid Token")
-        const now = moment()
-        if (moment(foundToken.expireAt) > moment(foundToken.createdAt).add(5, 'minute')) {
+        const tokenExpiryTime = moment(foundToken.createdAt).add(15, 'minutes');
+        if (moment(foundToken.expireAt).isAfter(tokenExpiryTime)) {
             await this.databaseService.token.delete({
                 where: {
-                    id: foundToken.id
-                }
-            })
-            throw new BadRequestException("Token has expired")
+                    id: foundToken.id,
+                },
+            });
+            throw new BadRequestException('Token has expired');
         }
         const user = await this.databaseService.user.update({
             where: {

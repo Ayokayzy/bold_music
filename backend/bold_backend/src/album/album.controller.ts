@@ -2,33 +2,61 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { AlbumService } from './album.service';
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
+import { ApiTags } from '@nestjs/swagger';
 
 @Controller('album')
+@ApiTags('album')
 export class AlbumController {
   constructor(private readonly albumService: AlbumService) {}
 
   @Post()
-  create(@Body() createAlbumDto: CreateAlbumDto) {
-    return this.albumService.create(createAlbumDto);
+  async create(@Body() createAlbumDto: CreateAlbumDto) {
+    return {
+      status: "success",
+      code: 200,
+      message: "Song created successfully",
+      data: await this.albumService.create(createAlbumDto)
+    }
+    return ;
   }
 
   @Get()
-  findAll() {
-    return this.albumService.findAll();
+  async findAll() {
+    return {
+      status: "success",
+      code: 200,
+      message: "Song created successfully",
+      data: await this.albumService.findAll()
+    }
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.albumService.findOne(+id);
+  async findOne(@Param('id') id: string) {
+    return {
+      status: "success",
+      code: 200,
+      message: "Song created successfully",
+      data: await this.albumService.findOne(id)
+    }
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAlbumDto: UpdateAlbumDto) {
-    return this.albumService.update(+id, updateAlbumDto);
+  async update(@Param('id') id: string, @Body() updateAlbumDto: UpdateAlbumDto) {
+    return {
+      status: "success",
+      code: 200,
+      message: "Song created successfully",
+      data: await this.albumService.update(id, updateAlbumDto)
+    }
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.albumService.remove(+id);
+  async remove(@Param('id') id: string) {
+    return {
+      status: "success",
+      code: 200,
+      message: "Song created successfully",
+      data: await this.albumService.remove(id)
+    }
   }
 }

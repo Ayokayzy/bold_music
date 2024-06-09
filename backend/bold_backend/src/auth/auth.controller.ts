@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Get, Post, Request, UseGuards, ValidationPipe } from '@nestjs/common';
 import { Prisma, TokenType } from '@prisma/client';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from 'src/user/dto/create-user.dts';
@@ -8,26 +8,36 @@ import { DatabaseService } from 'src/database/database.service';
 import { log } from 'console';
 import { EmailDto } from './dto/emailDto';
 import { ResetPasswordDto } from './dto/ResetPasswordDto';
+import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { Public } from 'src/public';
+import { LocalAuthGuard } from './local-auth.guard';
+import { JwtAuthGuard } from './jwt-auth.guard';
+import { TokenDto } from './dto/tokenDto';
 
 @Controller('auth')
+@ApiTags('auth')
 export class AuthController {
     constructor(private readonly authService: AuthService, private databaseService: DatabaseService) { }
 
-    // @Post('/login')
-    // async login(@Body(ValidationPipe) signInDto: UserLoginDto) {
-    //     const result = await this.authService.login(signInDto)
-    //     return {
-    //         status: "success",
-    //         code: 201,
-    //         message: "User logged successfully",
-    //         data: {
-    //             data: result.user,
-    //             token: result.token
-    //         }
-    //     }
-    // }
+    @Public()
+    @UseGuards(LocalAuthGuard)
+    @Post('/login')
+    async login(@Body(ValidationPipe) userLoginDto: UserLoginDto, @Request() req) {
+        const result = await this.authService.login(req.user)
+        return {
+            status: "success",
+            code: 201,
+            message: "User logged successfully",
+            data: {
+                data: result.user,
+                token: result.token
+            }
+        }
+    }
 
+    @Public()
     @Post('/register')
+    @ApiCreatedResponse({ type: CreateUserDto })
     async register(@Body(ValidationPipe) createUserDto: CreateUserDto) {
         const user = await this.authService.registerUser(createUserDto)
         return {
@@ -38,9 +48,11 @@ export class AuthController {
         }
     }
 
+    @Public()
     @Post('/send-email-verification')
-    sendEmailVerification(@Body(ValidationPipe) email: EmailDto) {
-        this.authService.sendEmailVerification(email.email)
+    @ApiOkResponse()
+    async sendEmailVerification(@Body(ValidationPipe) email: EmailDto) {
+        await this.authService.sendEmailVerification(email.email)
         return {
             status: "success",
             code: 200,
@@ -48,9 +60,11 @@ export class AuthController {
         }
     }
 
+    @Public()
     @Post('/verify-email')
-    verifyEmailAccount(@Body(ValidationPipe) token: { token: string }) {
-        this.authService.verifyEmailAccount(+token.token)
+    @ApiOkResponse()
+    async verifyEmailAccount(@Body(ValidationPipe) token: TokenDto) {
+        await this.authService.verifyEmailAccount(+token.token)
         return {
             status: "success",
             code: 200,
@@ -58,9 +72,11 @@ export class AuthController {
         }
     }
 
+    @Public()
     @Post('/request-password-reset')
-    requestPasswordReset(@Body(ValidationPipe) email: EmailDto) {
-        this.authService.requestPasswordReset(email.email)
+    @ApiOkResponse()
+    async requestPasswordReset(@Body(ValidationPipe) email: EmailDto) {
+        await this.authService.requestPasswordReset(email.email)
         return {
             status: "success",
             code: 200,
@@ -68,9 +84,11 @@ export class AuthController {
         }
     }
 
+    @Public()
     @Post('/verify-password-reset-token')
-    resetPassword(@Body() token: { token: string }) {
-        this.authService.verifyPasswordReset(+token.token)
+    @ApiOkResponse()
+    async resetPassword(@Body() token: { token: string }) {
+        await this.authService.verifyPasswordReset(+token.token)
         return {
             status: "success",
             code: 200,
@@ -78,14 +96,23 @@ export class AuthController {
         }
     }
 
+    @Public()
     @Post('/change-password')
-    changePassword(@Body(ValidationPipe) changePasswordDto: ResetPasswordDto) {
-        this.authService.changePassword(changePasswordDto.id, changePasswordDto.oldPassword, changePasswordDto.newPassword)
+    @ApiOkResponse()
+    async changePassword(@Body(ValidationPipe) changePasswordDto: ResetPasswordDto) {
+        await this.authService.changePassword(changePasswordDto.id, changePasswordDto.oldPassword, changePasswordDto.newPassword)
         return {
             status: "success",
             code: 200,
             message: "Password reset successfully",
         }
+    }
+
+    @Public()
+    @UseGuards(JwtAuthGuard)
+    @Get('/profile') @ApiOkResponse({ type: CreateUserDto })
+    getProfile(@Request() req) {
+        return req.user;
     }
 
 }

@@ -51,16 +51,19 @@ model Artist {
 }
 
 model Song {
-  id         String   @id @unique @default(dbgenerated())
+  id         String     @id @unique @default(dbgenerated())
   title      String
-  artist     Artist   @relation(fields: [artistId], references: [id])
-  artistId   String
+  artist     Artist?    @relation(fields: [artistId], references: [id])
+  artistId   String?
   genre      String
   duration   Int
+  album      Album?     @relation(fields: [albumId], references: [id])
+  albumId    String?
+  playlists  Playlist[]
   fileUrl    String
   coverImage String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 }
 
 model Playlist {
@@ -68,6 +71,7 @@ model Playlist {
   title     String
   user      User     @relation(fields: [userId], references: [id])
   userId    String
+  songs     Song[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -77,6 +81,7 @@ model Album {
   title       String
   artist      Artist   @relation(fields: [artistId], references: [id])
   artistId    String
+  songs       Song[]
   releaseDate DateTime
   coverPhoto  String
   createdAt   DateTime @default(now())

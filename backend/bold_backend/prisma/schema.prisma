@@ -56,7 +56,7 @@ model Song {
   artist     Artist?    @relation(fields: [artistId], references: [id])
   artistId   String?
   genre      String
-  duration   Int
+  duration   String
   album      Album?     @relation(fields: [albumId], references: [id])
   albumId    String?
   playlists  Playlist[]

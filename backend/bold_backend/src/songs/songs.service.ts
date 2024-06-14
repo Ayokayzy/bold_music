@@ -3,16 +3,24 @@ import { CreateSongDto } from './dto/create-song.dto';
 import { UpdateSongDto } from './dto/update-song.dto';
 import { DatabaseService } from 'src/database/database.service';
 import { v4 as uuidv4 } from 'uuid';
+import { FileUploadService } from 'src/file-upload/file-upload.service';
 
 @Injectable()
 export class SongsService {
-  constructor(private databaseService: DatabaseService) { }
+  constructor(private databaseService: DatabaseService, private fileUploadService: FileUploadService) { }
 
-  async create(createSongDto: CreateSongDto) {
-    const song = await this.databaseService.song.create({
-      data: { ...createSongDto, id: uuidv4() }
-    })
-    return song;
+  async create(createSongDto: CreateSongDto, file: any) {
+
+    const songUrl = await this.fileUploadService.uploadMusic(file.fileUrl);
+    const coverImage = await this.fileUploadService.uploadImage(file.coverImage)
+
+    console.log({ songUrl, coverImage });
+
+
+    // const song = await this.databaseService.song.create({
+    //   data: { ...createSongDto, fileUrl: file, id: uuidv4() }
+    // })
+    // return song;
   }
 
   async findAll() {

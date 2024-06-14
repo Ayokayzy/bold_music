@@ -13,6 +13,10 @@ import { ArtistsModule } from './artists/artists.module';
 import { AuthService } from './auth/auth.service';
 import { AlbumModule } from './album/album.module';
 import { PlaylistModule } from './playlist/playlist.module';
+import { FileUploadService } from './file-upload/file-upload.service';
+import { FileUploadModule } from './file-upload/file-upload.module';
+import { CloudinaryService } from './cloudinary/cloudinary.service';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -25,9 +29,11 @@ import { PlaylistModule } from './playlist/playlist.module';
     SongsModule,
     ArtistsModule,
     AlbumModule,
-    PlaylistModule
+    PlaylistModule,
+    FileUploadModule,
+    CloudinaryModule
   ],
   controllers: [AppController],
-  providers: [AppService, MyLoggerService, AuthService],
+  providers: [AppService, MyLoggerService, AuthService, FileUploadService, CloudinaryService],
 })
 export class AppModule { }

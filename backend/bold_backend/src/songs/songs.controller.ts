@@ -1,21 +1,42 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ValidationPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ValidationPipe, UploadedFile, ParseFilePipe, ParseFilePipeBuilder, HttpStatus, UseInterceptors, UploadedFiles } from '@nestjs/common';
 import { SongsService } from './songs.service';
 import { CreateSongDto } from './dto/create-song.dto';
 import { UpdateSongDto } from './dto/update-song.dto';
 import { ApiTags } from '@nestjs/swagger';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { Public } from 'src/public';
 
 @Controller('songs')
 @ApiTags('songs')
 export class SongsController {
   constructor(private readonly songsService: SongsService) { }
 
+  @Public()
   @Post()
-  async create(@Body(ValidationPipe) createSongDto: CreateSongDto) {
+  @UseInterceptors(FileFieldsInterceptor([
+    { name: 'coverImage', maxCount: 1 },
+    { name: 'fileUrl', maxCount: 1 },
+  ]))
+  async create(
+    @Body(ValidationPipe) createSongDto: CreateSongDto,
+    @UploadedFiles(
+      // new ParseFilePipeBuilder()
+      //   .addFileTypeValidator({
+      //     fileType: 'mp3',
+      //   })
+      //   .build({
+      //     errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY
+      //   })
+    ) files: { coverImage?: Express.Multer.File, fileUrl: Express.Multer.File }
+  ) {
+    const fileString = files.fileUrl
+    console.log({ fileString });
+
     return {
       status: "success",
       code: 200,
       message: "Song created successfully",
-      data: await this.songsService.create(createSongDto)
+      data: await this.songsService.create(createSongDto, files)
     }
   }
 

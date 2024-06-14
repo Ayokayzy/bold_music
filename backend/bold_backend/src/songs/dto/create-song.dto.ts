@@ -13,7 +13,7 @@ export class CreateSongDto {
     @ApiProperty()
     artistId: string
 
-    @IsUUID()
+    // @IsUUID()
     @ApiProperty()
     albumId?: string
 
@@ -23,17 +23,19 @@ export class CreateSongDto {
     genre: string
 
     @IsNotEmpty()
-    @IsInt()
+    // @IsInt()
     @ApiProperty()
-    duration: number
+    duration: string
 
-    @IsString()
-    @IsUrl()
+    // @IsNotEmpty()
+    // @IsString()
+    // @IsUrl()
     @ApiProperty()
     coverImage: string
 
-    @IsString()
-    @IsUrl()
+    // @IsNotEmpty()
+    // @IsString()
+    // @IsUrl()
     @ApiProperty()
     fileUrl: string
 
